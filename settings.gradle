@@ -1,0 +1,2 @@
+include ':app'
+rootProject.name='Y_EESP32_SmartGlasses_R2'

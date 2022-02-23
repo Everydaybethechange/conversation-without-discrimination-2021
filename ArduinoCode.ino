@@ -61,7 +61,7 @@
         //intVoltage
         int intVoltage;
 
-        //pad stuff
+        //below are old buttons, new are labeled "A5" in the comments
 
         int pad4 = 0;
         int pad0 = 0;
@@ -86,23 +86,23 @@
         int _MarginX = 0;
         int _MarginY = 0;
 
-        //D5 to D9 , or pins 8 to 12
-        int _TouchSensorGPIO = 9;
+
+        int _TouchSensorGPIO = 4;      //REAL BUTTONS - screen switch button, D4
         int _TouchSensorThreshold = 20;
         int _PowerSaveInterval = 8000;
 
 
-
-        int _TouchSensorGPIO15 = 15;
-        int _TouchSensorGPIO2 = 2;
-        int _TouchSensorGPIO0 = 0;
-        int _TouchSensorGPIO4 = 4;
-        int _TouchSensorGPIO27=27;
+//OLD buttons, ignore
+                        int _TouchSensorGPIO15 = 15;  //IGNORE
+                        int _TouchSensorGPIO2 = 2;     //   l
+                        int _TouchSensorGPIO0 = 0;     //   I
+                        int _TouchSensorGPIO4 = 4;     //  <
+                        int _TouchSensorGPIO27=27;
 
         float _BatteryVoltageFlat       = 3.1f; // In my case 3.1V from ADC means ~3.6V from battery ( ADC in ESP is not linear! so we cant calculate exact value of battery just estimate!)
 
         /* --- Operating Mode --- */
-        int iOperatingMode = -1;        // 0 - BLE, 1 - WEB_UPDATE, default = BLE
+        int iOperatingMode = 0;        // 0 - BLE, 1 - WEB_UPDATE, default = BLE
 
         int getOperatingMode() {
         if (iOperatingMode == -1) iOperatingMode = 0;
@@ -124,7 +124,7 @@
 
 /* --- Button Class --- */
 class ButtonClass {
-    int lastState=0; int lastState0=0; int lastState2=0; int lastState4=0; int lastState15=0;
+    int lastState=0;
     //int lastState=
     long clickBreakTime=50;      // \]\]\] STATIC
     long lastClickTime=0; //long lastClickTime0=0; long lastClickTime2=0; long lastClickTime4=0; long lastClickTime15=0;
@@ -564,15 +564,13 @@ class BLEReceive {
 
 
     /*
-Programmed by Brian McEvoy. 24 Hour Engineer
-24hourengineer.com
-Program is distributable for personal use.
+This part from originalinstructjava.ino
 */
 
 // Inputs. Buttons may be addressed by name but the program expects all buttons after the pinky
 // to be numbered sequentially.
-
-        int fifthbutton = 5;
+       //D5 to D9 , or pins 8 to 12    REAL BUTTONS - those are the working typing buttons
+                int fifthbutton = 5;
                 int fourthbuttonSIX = 6;
                 int middleButton = 7;
                 int secondButtonEIGHT = 8;
@@ -1191,3 +1189,6 @@ default:
         powerSavePreviousMillis = powerSaveCurrentMillis;
         }
         }
+
+
+

@@ -1,5 +1,5 @@
 
-#define BLE 0
+        #define BLE 0
 
         #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
         #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
@@ -48,39 +48,26 @@
 
 
         /* -------------- Variables -------------- */
+
+                //pick your display below
         U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_MIRROR, /* reset=*/ U8X8_PIN_NONE, /* clock=*/ SCL, /* data=*/ SDA);   // pin remapping with ESP8266 HW I2C
         U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(U8G2_MIRROR, /* reset=*/ U8X8_PIN_NONE);
         bool shouldDrawToOled = false;
         String *aOledSendData;
         unsigned long powerSavePreviousMillis = 0;
         unsigned long powerSaveCurrentMillis = 0;
-        //theword comment
+       //theword comment
 
         String theword;
 
         //intVoltage
         int intVoltage;
 
-        //below are old buttons, new are labeled "A5" in the comments
 
-        int pad4 = 0;
-        int pad0 = 0;
-        int pad2 = 0;
-        int pad15 = 0;
-        int pad27 = 0;
-
-        //serial port
-
-
-
-        const char* ble_name = "ESP32 (SmartGlasses)";
+        const char* ble_name = "Arduino Smartglass";
         bool isDeviceConnected = false;
 
-        //   WebServer server(80);
-        const char* ssid = "ESP32Update";
-        const char* password = "12345678";
 
-        //RTC_DATA_ATTR bool isDeepSleepBoot = false;
 
         // Variables changeable during BLE connect
         int _MarginX = 0;
@@ -88,16 +75,9 @@
 
 
         int _TouchSensorGPIO = 4;      //REAL BUTTONS - screen switch button, D4
-        int _TouchSensorThreshold = 20;
+
         int _PowerSaveInterval = 8000;
 
-
-//OLD buttons, ignore
-                        int _TouchSensorGPIO15 = 15;  //IGNORE
-                        int _TouchSensorGPIO2 = 2;     //   l
-                        int _TouchSensorGPIO0 = 0;     //   I
-                        int _TouchSensorGPIO4 = 4;     //  <
-                        int _TouchSensorGPIO27=27;
 
         float _BatteryVoltageFlat       = 3.1f; // In my case 3.1V from ADC means ~3.6V from battery ( ADC in ESP is not linear! so we cant calculate exact value of battery just estimate!)
 
@@ -105,7 +85,7 @@
         int iOperatingMode = 0;        // 0 - BLE, 1 - WEB_UPDATE, default = BLE
 
         int getOperatingMode() {
-        if (iOperatingMode == -1) iOperatingMode = 0;
+        iOperatingMode = 0;
         return 0; //hardcode always to BLE
         }
 
@@ -114,12 +94,7 @@
 
         iOperatingMode = om;
 
-        if (restart) {
-        Serial.print("[Warning] Writing to EEPROM. Mode= "); Serial.println(om);
-        // EEPROM.write(EEPROM_PLACE, om); EEPROM.commit(); //Writing om (operating mode) to EEPROM_PLACE, which is 0 at init, as said by #define
-        delay(100);
-        //   ESP.restart();
-        }
+
         }
 
 /* --- Button Class --- */
@@ -156,16 +131,7 @@ class ButtonClass {
             btnState = 0;
         }
 
-        // Samples - prevent situation when accidentally device detect one touch for microsecond
-//            if (btnState != lastState) {
-//                samplesCurrent++;
-//
-//                if (samplesCurrent < samplesLimit) return -1;
-//            }
-//            samplesCurrent = 0;
 
-//    Serial.println(touchRead(GPIO));
-//    Serial.println(btnState);
 
         if (btnState != lastState && (now - lastClickTime) > clickBreakTime) {     // \]\]\] if btnstate isn't laststate (y/n), and (delay> 50 millis)
             if (btnState == 0 && !longClickDetected) {                             // Button click detected when button goes up
@@ -196,7 +162,7 @@ class ButtonClass {
             multiClickCounter=0;
         }
 
-        //ifshouldupdate
+
 
         return ReturningValue;
     }
@@ -303,7 +269,7 @@ class DisplayClass {
         if      (__Offset == 0) drawString(12, 9, "Typing.");
         else if (__Offset == 1) drawString(12, 9, "Typing..");
         else                    drawString(12, 9, "Typing...");
-        setFontSize(4); drawString(0, 22, theword);
+        setFontSize(4); drawString(0, 22, "your msg");
 
         u8g2.sendBuffer();
 
@@ -323,7 +289,7 @@ class DisplayClass {
 
         // Same text
         drawSymbol(0, 9, symbol, 1);
-        setFontSize(8 ); drawString(13, 9, theword);
+        setFontSize(8 ); drawString(13, 9, "your msg");
 
         // Scroll Text
         setFontSize(msgFontSize);
@@ -433,22 +399,6 @@ class DisplayClass {
 class BLEReceive {
     public:
 
-    // --- Connected/Disconnected ---
-//        class BLEConnectState : public BLEServerCallbacks {
-//            void onConnect(BLEServer* pServer) {
-//                isDeviceConnected = true;
-//                Serial.println("##[INFO - BLE] Device connected");
-//                //BLEDevice::startAdvertising();
-//            }
-//
-//            void onDisconnect(BLEServer* pServer) {
-//                isDeviceConnected = false;
-//                Serial.println("##[INFO - BLE] Device disconnected");
-//                delay(100);
-//                ESP.restart();    // Bug in BLE cant connect after disconnecting so just restart for now
-//            }
-//        };
-
     // --- Receive ---
     class BLEReceiveClass {    //class BLEReceiveClass : public BLECharacteristicCallbacks {
         String aReceivedData[MAX_RECEIVED_ADATA_SIZE];
@@ -477,12 +427,10 @@ class BLEReceive {
                 sReceived = Serial.readString();
                 // OLD>ESP Serial.print("[INFO - BLE] Received: "); Serial.println(sReceived);
 
-                // --- Change Operating Mode - from ble to wu ---
-                if      (sReceived == "#OM=0"   )  { setOperatingMode(BLE        , true); return; }
-                else if (sReceived == "#OM=1"   )  { setOperatingMode(BLE , true); return; }
+
                 //else if (sReceived == "#RESTART")  { ESP.restart()                      ; return; }
 
-                else if (sReceived.startsWith("#MX="  ))  { _MarginX              =sReceived.substring(4, sReceived.length()).toInt(); Serial.println("##"+_MarginX)             ; return; }  // Margin X             Def: 0
+                if (sReceived.startsWith("#MX="  ))  { _MarginX              =sReceived.substring(4, sReceived.length()).toInt(); Serial.println("##"+_MarginX)             ; return; }  // Margin X             Def: 0
                 else if (sReceived.startsWith("#MY="  ))  { _MarginY              =sReceived.substring(4, sReceived.length()).toInt(); Serial.println("##"+_MarginY)             ; return; }  // Margin Y             Def: 0
                 else if (sReceived.startsWith("#PSI=" ))  { _PowerSaveInterval    =sReceived.substring(5, sReceived.length()).toInt(); Serial.println("##"+_PowerSaveInterval)   ; return; }  // PowerSaveInterval    Def: 8000
                 else if (sReceived.startsWith("#TSG=" ))  { _TouchSensorGPIO      =sReceived.substring(5, sReceived.length()).toInt(); Serial.println("##"+_TouchSensorThreshold); return; }  // TouchSensorGPIO      Def: 13
@@ -526,39 +474,11 @@ class BLEReceive {
 
     // --- Init ---
     void init() {
-//            BLEDevice::init(ble_name);
-//
-//            BLEServer *pServer = BLEDevice::createServer();
-//            pServer->setCallbacks(new BLEConnectState());
-//
-//            BLEService *pService = pServer->createService(SERVICE_UUID);
-//
-//            pCharacteristic = pService->createCharacteristic(
-//                    CHARACTERISTIC_UUID,
-//                    BLECharacteristic::PROPERTY_READ |
-//                            BLECharacteristic::PROPERTY_WRITE
-//            );
-//
-//            pCharacteristic->setCallbacks(new BLEReceiveClass());
-//            pCharacteristic->setValue("1");
-//
-//            pService->start();
-//
-//            BLEAdvertising *pAdvertising = pServer->getAdvertising();
-//            pAdvertising->start();
-//
-//            String sBleMacAddress = BLEDevice::getAddress().toString().c_str();
-//
+
         Serial.println("[INFO - BLE] Starting with MAC address: ");
-//            Serial.println(sBleMacAddress);
+
     }
 };
-
-
-//      //     //      ////     //
-//
-//      //     //      ////     //   N E W           N E W              N E W
-//
 
 
 
@@ -569,98 +489,92 @@ This part from originalinstructjava.ino
 
 // Inputs. Buttons may be addressed by name but the program expects all buttons after the pinky
 // to be numbered sequentially.
-       //D5 to D9 , or pins 8 to 12    REAL BUTTONS - those are the working typing buttons
-                int fifthbutton = 5;
-                int fourthbuttonSIX = 6;
-                int middleButton = 7;
-                int secondButtonEIGHT = 8;
-                int firstbuttonNINEnearT = 9;
-                //  int centerTButton = 9;
-                // int farTButton = 10;
 
-                // Program integers
-                int prefixChord = 0;            // 1 = shift (F). 2 = numlock (N). 3 = special (CN). 4 = function keys
-                int chordValue = 0;
-                int randomNumber01;
-                int randomNumber02;
-                int randomNumber03;
-                int randomNumber04;
-                int debounceDelay = 20;
-
-                int sign1 = 0;
-                int sign2 = 0;
-
-                // Booleans
-                boolean buttons[5];     // Pinky is [0] and far thumb is [6]
-                boolean latchingButtons[5];
-                boolean acquiringPresses = LOW;
-                boolean calculateKey = LOW;
-                boolean stickyCapsLock = LOW;
-                boolean stickyNumlock = LOW;
-                boolean stickySpecialLock = LOW;
+//D5 to D9 , or pins 8 to 12    REAL BUTTONS - those are the working typing buttons
+                        int fifthbutton = 5;
+                        int fourthbuttonSIX = 6;
+                        int middleButton = 7;
+                        int secondButtonEIGHT = 8;
+                        int firstbuttonNINEnearT = 9;
 
 
+                        // Program integers
+                        int prefixChord = 0;            // 1 = shift (F). 2 = numlock (N). 3 = special (CN). 4 = function keys
+                        int chordValue = 0;
+                        int randomNumber01;
+                        int randomNumber02;
+                        int randomNumber03;
+                        int randomNumber04;
+                        int debounceDelay = 20;
 
-                DisplayClass dc;
-                BLEReceive ble;
-                ButtonClass button;
+                        int sign1 = 0;
+                        int sign2 = 0;
 
-
-                void setup(){
-//        Serial1.begin(9600);
-
-                Serial.begin(9600);  //communication rate of the HC05 Module
-                Serial.println("##Up and runnning");
-
-
-                randomSeed(analogRead(0));
-
-                pinMode(fifthbutton, INPUT_PULLUP);
-                pinMode(fourthbuttonSIX, INPUT_PULLUP);
-                pinMode(middleButton, INPUT_PULLUP);
-                pinMode(secondButtonEIGHT, INPUT_PULLUP);
-                pinMode(firstbuttonNINEnearT, INPUT_PULLUP);
+                        // Booleans
+                        boolean buttons[5];     // Pinky is [0] and far thumb is [6]
+                        boolean latchingButtons[5];
+                        boolean acquiringPresses = LOW;
+                        boolean calculateKey = LOW;
+                        boolean stickyCapsLock = LOW;
+                        boolean stickyNumlock = LOW;
+                        boolean stickySpecialLock = LOW;
 
 
 
-                delay(3000);
-                u8g2.begin();
+                        DisplayClass dc;
+                        BLEReceive ble;
+                        ButtonClass button;
 
 
-                Serial.println("##[INFO] OperatingMode: BLE");
-                ble.init();
+                        void setup(){
 
 
-                // Info OLED
-                delay(100);
-                dc.setFontSize(7); dc.drawString(10, 10, "Ready. Mode:" ); dc.drawString(10, 20, (getOperatingMode() == WEB_UPDATE) ? "WU" : "BLE" ); dc.sendBuffer(); powerSavePreviousMillis = millis();
+                        Serial.begin(9600);  //communication rate of the HC05 Module
+                        Serial.println("##Up and runnning");
 
 
-//        pinMode(centerTButton, INPUT_PULLUP);
-//        pinMode(farTButton, INPUT_PULLUP);
-                }
+                        randomSeed(analogRead(0));
 
-                void loop(){
-                acquiringPresses = checkButtonArray();
+                        pinMode(fifthbutton, INPUT_PULLUP);
+                        pinMode(fourthbuttonSIX, INPUT_PULLUP);
+                        pinMode(middleButton, INPUT_PULLUP);
+                        pinMode(secondButtonEIGHT, INPUT_PULLUP);
+                        pinMode(firstbuttonNINEnearT, INPUT_PULLUP);
 
-//        if (acquiringPresses && onlyFarThumbPressed(farTButton)){
-//            doMouseSTUFF();//fifthbutton
-//        }
 
-                int action = button.detect(_TouchSensorGPIO);
 
-                if ( action > -1 ){
-                if(action==0){Serial.println("#TS0");} // 0 - long click
-                else if(action>0){Serial.println("#TS"+String(action));}
-                }
+                        delay(3000);
+                        u8g2.begin();
 
-                if (acquiringPresses){
-                delay(debounceDelay);                           // Instead of a true software debounce this will wait a moment until the first button press has settled.
-                typingChord();                      // Wait and see which keys are touched. When they are all released print the correct letter.
+
+                        Serial.println("##[INFO] OperatingMode: BL");
+                        ble.init();
+
+
+                        // Info OLED
+                        delay(100);
+                        dc.setFontSize(7); dc.drawString(10, 10, "Ready. Mode:" ); dc.drawString(10, 20,"BL" ); dc.sendBuffer(); powerSavePreviousMillis = millis();
+
+
+                        }
+
+                        void loop(){
+                        acquiringPresses = checkButtonArray();
+
+                        int action = button.detect(_TouchSensorGPIO);
+
+                        if ( action > -1 ){
+                        if(action==0){Serial.println("#TS0");} // 0 - long click
+                        else if(action>0){Serial.println("#TS"+String(action));}
+                        }
+
+                        if (acquiringPresses){
+                        delay(debounceDelay);                           // Instead of a true software debounce this will wait a moment until the first button press has settled.
+                        typingChord();                      // Wait and see which keys are touched. When they are all released print the correct letter.
 //            updateShiftKeys();          // Change the prefixChord value if any of the 'locks' are set. Example, Num Lock or Caps Lock.
-                //   sendKeyPress();                     // Using the buttons pressed during the typingChord function determine how to handle the chord.
-                delay(debounceDelay);                           // The other half of the software "debounce"
-                for (int i = 0; i < 5; i++){                                        //         {}_}_{}// Once a keypress has been sent, make all latching buttons zero.
+                        //   sendKeyPress();                     // Using the buttons pressed during the typingChord function determine how to handle the chord.
+                        delay(debounceDelay);                           // The other half of the software "debounce"
+                        for (int i = 0; i < 5; i++){                                        //         {}_}_{}// Once a keypress has been sent, make all latching buttons zero.
         latchingButtons[i] = LOW;
         }
         chordValue = 0;
@@ -715,7 +629,8 @@ This part from originalinstructjava.ino
 
         }
         }
-        Serial.println(keySwitch(chordValue));
+        Serial.println(keySwitch(chordValue));   //tHIS IS WHERE CHARACTER IS SENT TO THE BL
+                //^ VERY IMPORTANT
         // Serial.write(keySwitch(chordValue));
 
 
@@ -833,85 +748,7 @@ This part from originalinstructjava.ino
         return 100;          // 100 → d
 
         }
-//            case 13:                  // This chord is open
-//                randomNumber01 = random(0, 255);
-//                randomNumber02 = random(0, 1000);
-//                randomNumber03 = random(0, 4000);
-//                switch (prefixChord){
-//                    case 0:
-//                        prefixChord = 0;
-//                        sign1 = random(0,4);
-//                        sign2 = random(0,4);
-//                        Serial.println(randomNumber01);
-//                       // Serial.print(randomNumber01);
-//                        if (sign1 == 0){
-//                            Serial.println('/');
-//                            Serial1.print('/');
-//                        }
-//                        if (sign1 == 1){
-//                            Serial.println('*');
-//                            Serial1.print('*');
-//                        }
-//                        if (sign1 == 2){
-//                            Serial.println('-');
-//                            Serial1.print('-');
-//                        }
-//                        if (sign1 == 3){
-//                            Serial.println('+');
-//                            Serial1.print('+');
-//                        }
-//                        Serial.println(randomNumber02);
-//                        Serial1.print(randomNumber02);
-//                        if (sign2 == 0){
-//                            Serial.println('/');
-//                            Serial1.print('/');
-//                        }
-//                        if (sign2 == 1){
-//                            Serial.println('*');
-//                            Serial1.print('*');
-//                        }
-//                        if (sign2 == 2){
-//                            Serial.println('-');
-//                            Serial1.print('-');
-//                        }
-//                        if (sign2 == 3){
-//                            Serial.println('+');
-//                            Serial1.print('+');
-//                        }
-//                        Serial.println(randomNumber03);
-//                        Serial1.print(randomNumber03);
-//                        delay(5);
-//                        Serial.println('\n');
-//                        return 10;
-//                    case 1:
-//                        prefixChord = 0;
-//                        Serial.println("0.");
-//                        Serial1.print("0.");
-//                        randomNumber04 = random(0, 10);
-//                        Serial.println(randomNumber04);
-//                        Serial1.print(randomNumber04);
-//                        randomNumber04 = random(0, 10);
-//                        Serial.println(randomNumber04);
-//                        Serial1.print(randomNumber04);
-//                        randomNumber04 = random(0, 10);
-//                        Serial.println(randomNumber04);
-//                        Serial1.print(randomNumber04);
-//                        randomNumber04 = random(0, 10);
-//                        Serial.println(randomNumber04);
-//                        Serial1.print(randomNumber04);
-//                        return 0;
-//                    case 2:
-//                        prefixChord = 0;
-//                        return 0;
-//                    case 3:
-//                        prefixChord = 0;
-//                        return 0;
-//                    case 4:
-//                        prefixChord = 0;
-//                        Serial.println(randomNumber01);
-//                        Serial1.print(randomNumber01);
-//                        return 0;
-//                }
+
         case 14:
         switch (prefixChord){
         case 0:
@@ -983,7 +820,7 @@ This part from originalinstructjava.ino
 //                        prefixChord = 0;
 //                        Serial.println(27);
 //                        return 0x1B;
-        }
+ //       }
 //            case 19:
 //                switch (prefixChord){
 //                    case 0:
